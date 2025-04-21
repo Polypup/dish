@@ -2,41 +2,54 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 /**
  * @title BurnLeaderboard
- * @dev A contract that tracks token burns and maintains a leaderboard of top burners
+ * @dev A contract that tracks token burns with timestamps and maintains time-based leaderboards
  */
 contract BurnLeaderboard is Ownable, ReentrancyGuard {
     // Dead address for permanent burns
-    address public constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
-    
+    address public constant DEAD_ADDRESS =
+        0x000000000000000000000000000000000000dEaD;
+
     // Token to be burned
     IERC20 public tokenAddress;
-    
-    // Structure to store burner information
+
+    // Structure to store individual burn events
+    struct BurnEvent {
+        address burner;
+        uint256 amount;
+        uint256 timestamp;
+    }
+
+    // Structure to store burner information for leaderboards
     struct Burner {
         address burnerAddress;
         uint256 amountBurned;
     }
-    
-    // Top burners leaderboard (limited size for gas efficiency)
-    uint256 public constant MAX_LEADERBOARD_SIZE = 20;
-    Burner[] public leaderboard;
-    
+
+    // All burn events
+    BurnEvent[] public allBurns;
+
     // Mapping to track burns for every address
-    mapping(address => uint256) public burnsByAddress;
-    
+    mapping(address => uint256) public totalBurnsByAddress;
+
+    // Mapping to track burn event indices for each address
+    mapping(address => uint256[]) public userBurnIndices;
+
     // Total amount of tokens burned
     uint256 public totalBurned;
-    
+
     // Events
-    event TokensBurned(address indexed burner, uint256 amount, uint256 timestamp);
+    event TokensBurned(
+        address indexed burner,
+        uint256 amount,
+        uint256 timestamp
+    );
     event TokenAddressUpdated(address newTokenAddress);
-    
+
     /**
      * @dev Constructor sets the token address and contract owner
      * @param _tokenAddress The ERC20 token that will be burned
@@ -44,7 +57,7 @@ contract BurnLeaderboard is Ownable, ReentrancyGuard {
     constructor(address _tokenAddress) Ownable(msg.sender) {
         tokenAddress = IERC20(_tokenAddress);
     }
-    
+
     /**
      * @dev Updates the token address (only owner)
      * @param _newTokenAddress New token address
@@ -53,123 +66,224 @@ contract BurnLeaderboard is Ownable, ReentrancyGuard {
         tokenAddress = IERC20(_newTokenAddress);
         emit TokenAddressUpdated(_newTokenAddress);
     }
-    
+
     /**
-     * @dev Burns tokens by transferring them to the dead address and updating leaderboard
+     * @dev Burns tokens by transferring them to the dead address and recording the event
      * @param _amount Amount of tokens to burn
      */
     function burnTokens(uint256 _amount) external nonReentrant {
         require(_amount > 0, "Amount must be greater than zero");
-        require(tokenAddress.transferFrom(msg.sender, address(this), _amount), "Transfer failed");
-        
-        // Track the burn
-        burnsByAddress[msg.sender] += _amount;
+        require(
+            tokenAddress.transferFrom(msg.sender, address(this), _amount),
+            "Transfer failed"
+        );
+
+        // Record the burn event
+        BurnEvent memory newBurn = BurnEvent({
+            burner: msg.sender,
+            amount: _amount,
+            timestamp: block.timestamp
+        });
+
+        // Add to allBurns array
+        allBurns.push(newBurn);
+
+        // Update user's burn indices
+        userBurnIndices[msg.sender].push(allBurns.length - 1);
+
+        // Update totals
+        totalBurnsByAddress[msg.sender] += _amount;
         totalBurned += _amount;
-        
-        // Update leaderboard
-        updateLeaderboard(msg.sender, burnsByAddress[msg.sender]);
-        
+
         // Send tokens to dead address
-        require(tokenAddress.transfer(DEAD_ADDRESS, _amount), "Burn transfer failed");
-        
+        require(
+            tokenAddress.transfer(DEAD_ADDRESS, _amount),
+            "Burn transfer failed"
+        );
+
         emit TokensBurned(msg.sender, _amount, block.timestamp);
     }
-    
+
     /**
-     * @dev Updates the leaderboard with a new burn
-     * @param _burner Address of the burner
-     * @param _totalAmount Total amount burned by this address
+     * @dev Get the daily leaderboard (last 24 hours)
+     * @return The daily leaderboard
      */
-    function updateLeaderboard(address _burner, uint256 _totalAmount) internal {
-        // Check if burner is already on leaderboard
-        for (uint256 i = 0; i < leaderboard.length; i++) {
-            if (leaderboard[i].burnerAddress == _burner) {
-                // Update existing entry
-                leaderboard[i].amountBurned = _totalAmount;
-                // Sort the leaderboard
-                sortLeaderboard();
-                return;
+    function getDailyLeaderboard() external view returns (Burner[] memory) {
+        uint256 dayStart = block.timestamp - 1 days;
+        return _getLeaderboardForPeriod(dayStart, block.timestamp);
+    }
+
+    /**
+     * @dev Get the weekly leaderboard (last 7 days)
+     * @return The weekly leaderboard
+     */
+    function getWeeklyLeaderboard() external view returns (Burner[] memory) {
+        uint256 weekStart = block.timestamp - 7 days;
+        return _getLeaderboardForPeriod(weekStart, block.timestamp);
+    }
+
+    /**
+     * @dev Get the monthly leaderboard (last 30 days)
+     * @return The monthly leaderboard
+     */
+    function getMonthlyLeaderboard() external view returns (Burner[] memory) {
+        uint256 monthStart = block.timestamp - 30 days;
+        return _getLeaderboardForPeriod(monthStart, block.timestamp);
+    }
+
+    /**
+     * @dev Get the all-time leaderboard
+     * @return The all-time leaderboard
+     */
+    function getTotalLeaderboard() external view returns (Burner[] memory) {
+        return _getTotalLeaderboard();
+    }
+
+    /**
+     * @dev Internal function to get leaderboard for a specific time period
+     * @param _startTime Start timestamp of the period
+     * @param _endTime End timestamp of the period
+     * @return Leaderboard for the specified period
+     */
+    function _getLeaderboardForPeriod(
+        uint256 _startTime,
+        uint256 _endTime
+    ) internal view returns (Burner[] memory) {
+        // Temporary mapping to aggregate burns by address
+        mapping(address => uint256) storage tempBurns;
+        address[] memory uniqueBurners = new address[](100); // Temp array, resize if needed
+        uint256 uniqueBurnerCount = 0;
+
+        // Iterate through all burns
+        for (uint256 i = 0; i < allBurns.length; i++) {
+            BurnEvent memory burn = allBurns[i];
+
+            // Check if burn is within the time period
+            if (burn.timestamp >= _startTime && burn.timestamp < _endTime) {
+                // Add to temporary mapping
+                if (
+                    tempBurns[burn.burner] == 0 &&
+                    !_addressExists(
+                        uniqueBurners,
+                        burn.burner,
+                        uniqueBurnerCount
+                    )
+                ) {
+                    uniqueBurners[uniqueBurnerCount] = burn.burner;
+                    uniqueBurnerCount++;
+                }
+                tempBurns[burn.burner] += burn.amount;
             }
         }
-        
-        // If not on leaderboard, try to add
-        if (leaderboard.length < MAX_LEADERBOARD_SIZE) {
-            // Leaderboard not full, add new entry
-            leaderboard.push(Burner(_burner, _totalAmount));
-        } else if (_totalAmount > leaderboard[leaderboard.length - 1].amountBurned) {
-            // Leaderboard full but this burn is larger than the smallest on the board
-            leaderboard[leaderboard.length - 1] = Burner(_burner, _totalAmount);
-        } else {
-            // Not eligible for leaderboard
-            return;
+
+        // Create result array
+        Burner[] memory result = new Burner[](uniqueBurnerCount);
+
+        // Populate result array
+        for (uint256 i = 0; i < uniqueBurnerCount; i++) {
+            address burner = uniqueBurners[i];
+            result[i] = Burner({
+                burnerAddress: burner,
+                amountBurned: tempBurns[burner]
+            });
         }
-        
-        // Sort the leaderboard
-        sortLeaderboard();
+
+        // Sort the result
+        _sortBurners(result);
+
+        return result;
     }
-    
+
     /**
-     * @dev Sorts the leaderboard in descending order by amount burned
-     * Simple insertion sort since leaderboard is small
+     * @dev Internal function to get the all-time leaderboard
+     * @return The all-time leaderboard
      */
-    function sortLeaderboard() internal {
-        for (uint256 i = 1; i < leaderboard.length; i++) {
-            Burner memory key = leaderboard[i];
-            int j = int(i) - 1;
-            
-            while (j >= 0 && leaderboard[uint256(j)].amountBurned < key.amountBurned) {
-                leaderboard[uint256(j + 1)] = leaderboard[uint256(j)];
-                j--;
-            }
-            
-            leaderboard[uint256(j + 1)] = key;
-        }
-    }
-    
-    /**
-     * @dev Returns the complete leaderboard
-     * @return The array of top burners
-     */
-    function getLeaderboard() external view returns (Burner[] memory) {
-        return leaderboard;
-    }
-    
-    /**
-     * @dev Returns the top N burners
-     * @param _count Number of top burners to return
-     * @return Top N burners
-     */
-    function getTopBurners(uint256 _count) external view returns (Burner[] memory) {
-        uint256 count = Math.min(_count, leaderboard.length);
-        Burner[] memory topBurners = new Burner[](count);
-        
-        for (uint256 i = 0; i < count; i++) {
-            topBurners[i] = leaderboard[i];
-        }
-        
-        return topBurners;
-    }
-    
-    /**
-     * @dev Get amount burned by a specific address
-     * @param _address The address to check
-     * @return The amount burned by the address
-     */
-    function getBurnedByAddress(address _address) external view returns (uint256) {
-        return burnsByAddress[_address];
-    }
-    
-    /**
-     * @dev Get the rank of a specific address on the leaderboard
-     * @param _address The address to check
-     * @return The rank (1-based, 0 if not on leaderboard)
-     */
-    function getRankOfAddress(address _address) external view returns (uint256) {
-        for (uint256 i = 0; i < leaderboard.length; i++) {
-            if (leaderboard[i].burnerAddress == _address) {
-                return i + 1; // Rank is 1-based
+    function _getTotalLeaderboard() internal view returns (Burner[] memory) {
+        address[] memory uniqueBurners = new address[](100); // Temp array, resize if needed
+        uint256 uniqueBurnerCount = 0;
+
+        // Get all unique burners
+        for (uint256 i = 0; i < allBurns.length; i++) {
+            address burner = allBurns[i].burner;
+            if (!_addressExists(uniqueBurners, burner, uniqueBurnerCount)) {
+                uniqueBurners[uniqueBurnerCount] = burner;
+                uniqueBurnerCount++;
             }
         }
-        return 0; // Not on leaderboard
+
+        // Create result array
+        Burner[] memory result = new Burner[](uniqueBurnerCount);
+
+        // Populate result array
+        for (uint256 i = 0; i < uniqueBurnerCount; i++) {
+            address burner = uniqueBurners[i];
+            result[i] = Burner({
+                burnerAddress: burner,
+                amountBurned: totalBurnsByAddress[burner]
+            });
+        }
+
+        // Sort the result
+        _sortBurners(result);
+
+        return result;
+    }
+
+    /**
+     * @dev Helper function to check if address exists in array
+     */
+    function _addressExists(
+        address[] memory array,
+        address addr,
+        uint256 length
+    ) internal pure returns (bool) {
+        for (uint256 i = 0; i < length; i++) {
+            if (array[i] == addr) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @dev Helper function to sort burners by amount burned (descending)
+     */
+    function _sortBurners(Burner[] memory arr) internal pure {
+        uint256 length = arr.length;
+        for (uint256 i = 0; i < length; i++) {
+            for (uint256 j = i + 1; j < length; j++) {
+                if (arr[i].amountBurned < arr[j].amountBurned) {
+                    Burner memory temp = arr[i];
+                    arr[i] = arr[j];
+                    arr[j] = temp;
+                }
+            }
+        }
+    }
+
+    /**
+     * @dev Get all burns for a specific address
+     * @param _address Address to query
+     * @return Array of burn events for the address
+     */
+    function getUserBurns(
+        address _address
+    ) external view returns (BurnEvent[] memory) {
+        uint256[] memory indices = userBurnIndices[_address];
+        BurnEvent[] memory userBurns = new BurnEvent[](indices.length);
+
+        for (uint256 i = 0; i < indices.length; i++) {
+            userBurns[i] = allBurns[indices[i]];
+        }
+
+        return userBurns;
+    }
+
+    /**
+     * @dev Get total number of burn events
+     * @return Total number of burn events
+     */
+    function getTotalBurnEvents() external view returns (uint256) {
+        return allBurns.length;
     }
 }
