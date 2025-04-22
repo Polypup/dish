@@ -4,7 +4,19 @@ import { useWeb3Store } from '../stores/web3Store';
 
 const web3Store = useWeb3Store();
 const amount = ref('');
-const isLoading = computed(() => web3Store.status.includes('Burning') || web3Store.connecting);
+// Track burning state locally in addition to web3Store status
+const isBurning = ref(false);
+
+// Combined loading state covers all transaction steps
+const isLoading = computed(() => 
+  isBurning.value || 
+  web3Store.status.includes('Preparing') || 
+  web3Store.status.includes('Approving') || 
+  web3Store.status.includes('Burning') || 
+  web3Store.status.includes('Transaction submitted') || 
+  web3Store.status.includes('waiting for confirmation') || 
+  web3Store.connecting
+);
 const isAvalancheNetwork = computed(() => 
   web3Store.chainId === '0xa86a' || web3Store.chainId === '0xa869'
 );
@@ -16,16 +28,26 @@ const burnTokens = async () => {
     return;
   }
   
-  // Use leaderboard burn if available, otherwise fallback to direct burn
-  let success;
-  if (web3Store.leaderboardAddress) {
-    success = await web3Store.burnTokensWithLeaderboard(amount.value);
-  } else {
-    success = await web3Store.burnTokens(amount.value);
-  }
+  // Set burning state to true at the start
+  isBurning.value = true;
   
-  if (success) {
-    amount.value = '';
+  try {
+    // Use leaderboard burn if available, otherwise fallback to direct burn
+    let success;
+    if (web3Store.leaderboardAddress) {
+      success = await web3Store.burnTokensWithLeaderboard(amount.value);
+    } else {
+      success = await web3Store.burnTokens(amount.value);
+    }
+    
+    if (success) {
+      amount.value = '';
+    }
+  } catch (error) {
+    console.error('Error during token burn:', error);
+  } finally {
+    // Set burning state to false when done, regardless of outcome
+    isBurning.value = false;
   }
 };
 </script>
