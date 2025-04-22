@@ -9,6 +9,53 @@ import { useThemeStore } from './stores/themeStore';
 const web3Store = useWeb3Store();
 const themeStore = useThemeStore(); // Initialize theme store
 
+// Copy token address to clipboard with proper error handling
+const copyTokenAddress = () => {
+  if (!web3Store.tokenAddress) return;
+  
+  try {
+    if (window && window.navigator && window.navigator.clipboard && window.navigator.clipboard.writeText) {
+      window.navigator.clipboard.writeText(web3Store.tokenAddress)
+        .then(() => {
+          console.log('Token address copied to clipboard');
+        })
+        .catch(err => {
+          console.error('Failed to copy text with Clipboard API:', err);
+          fallbackCopyTextToClipboard(web3Store.tokenAddress);
+        });
+    } else {
+      // If Clipboard API not available, use fallback
+      fallbackCopyTextToClipboard(web3Store.tokenAddress);
+    }
+  } catch (err) {
+    console.error('Error accessing clipboard:', err);
+    fallbackCopyTextToClipboard(web3Store.tokenAddress);
+  }
+};
+
+// Fallback clipboard function
+const fallbackCopyTextToClipboard = (text) => {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  
+  // Make the textarea out of viewport
+  textArea.style.position = "fixed";
+  textArea.style.left = "-999999px";
+  textArea.style.top = "-999999px";
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+
+  try {
+    document.execCommand('copy');
+    console.log('Fallback: Copied token address to clipboard');
+  } catch (err) {
+    console.error('Fallback: Could not copy text: ', err);
+  }
+
+  document.body.removeChild(textArea);
+};
+
 // Initialize the web3 store on app mount
 onMounted(async () => {
   await web3Store.initOnboard();
@@ -54,6 +101,20 @@ onMounted(async () => {
           <v-col cols="12" md="6" class="text-center text-md-start">
             <div :class="['text-caption', themeStore.isDark ? 'text-grey-lighten-1' : 'text-grey-darken-1']">
               Dish Burner — Track your burns and climb the leaderboard
+            </div>
+            <div v-if="web3Store.tokenAddress" class="mt-1">
+              <v-chip
+                size="x-small"
+                color="secondary"
+                variant="outlined"
+                class="token-address-chip"
+                @click="copyTokenAddress"
+                title="Click to copy token address"
+              >
+                <v-icon start size="x-small">mdi-token</v-icon>
+                Token: {{ web3Store.tokenAddress.substring(0, 6) }}...{{ web3Store.tokenAddress.substring(web3Store.tokenAddress.length - 4) }}
+                <v-icon end size="x-small">mdi-content-copy</v-icon>
+              </v-chip>
             </div>
           </v-col>
           
@@ -159,5 +220,14 @@ html, body {
 
 .v-theme--dark .social-icon {
   filter: brightness(0.9);
+}
+
+.token-address-chip {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.token-address-chip:hover {
+  background-color: rgba(var(--v-theme-secondary), 0.15);
 }
 </style>

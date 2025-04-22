@@ -21,6 +21,53 @@ const isAvalancheNetwork = computed(() =>
   web3Store.chainId === '0xa86a' || web3Store.chainId === '0xa869'
 );
 
+// Copy token address to clipboard with proper error handling
+const copyTokenAddress = () => {
+  if (!web3Store.tokenAddress) return;
+  
+  try {
+    if (window && window.navigator && window.navigator.clipboard && window.navigator.clipboard.writeText) {
+      window.navigator.clipboard.writeText(web3Store.tokenAddress)
+        .then(() => {
+          console.log('Token address copied to clipboard');
+        })
+        .catch(err => {
+          console.error('Failed to copy text with Clipboard API:', err);
+          fallbackCopyTextToClipboard(web3Store.tokenAddress);
+        });
+    } else {
+      // If Clipboard API not available, use fallback
+      fallbackCopyTextToClipboard(web3Store.tokenAddress);
+    }
+  } catch (err) {
+    console.error('Error accessing clipboard:', err);
+    fallbackCopyTextToClipboard(web3Store.tokenAddress);
+  }
+};
+
+// Fallback clipboard function
+const fallbackCopyTextToClipboard = (text) => {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  
+  // Make the textarea out of viewport
+  textArea.style.position = "fixed";
+  textArea.style.left = "-999999px";
+  textArea.style.top = "-999999px";
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+
+  try {
+    document.execCommand('copy');
+    console.log('Fallback: Copied token address to clipboard');
+  } catch (err) {
+    console.error('Fallback: Could not copy text: ', err);
+  }
+
+  document.body.removeChild(textArea);
+};
+
 // Burn tokens function
 const burnTokens = async () => {
   if (!amount.value || parseFloat(amount.value) <= 0) {
@@ -88,7 +135,7 @@ const burnTokens = async () => {
                               size="small"
                               class="text-caption"
                               variant="text"
-                              @click="web3Store.tokenAddress && navigator.clipboard.writeText(web3Store.tokenAddress)"
+                              @click="copyTokenAddress"
                               title="Click to copy"
                             >
                               {{ web3Store.tokenAddress.substring(0, 6) }}...{{ web3Store.tokenAddress.substring(web3Store.tokenAddress.length - 4) }}
