@@ -8,6 +8,31 @@ const web3Store = useWeb3Store();
 // Loading state
 const isLoading = computed(() => web3Store.loadingLeaderboard);
 
+// Period options for tab selection
+const periodOptions = [
+  { value: web3Store.leaderboardPeriods.DAILY, title: 'Daily' },
+  { value: web3Store.leaderboardPeriods.WEEKLY, title: 'Weekly' },
+  { value: web3Store.leaderboardPeriods.MONTHLY, title: 'Monthly' },
+  { value: web3Store.leaderboardPeriods.ALL_TIME, title: 'All Time' }
+];
+
+// Change leaderboard period
+const changePeriod = async (period) => {
+  // Show loading state
+  web3Store.loadingLeaderboard = true;
+  try {
+    await web3Store.fetchLeaderboard(period);
+  } catch (error) {
+    console.error('Error changing leaderboard period:', error);
+  } finally {
+    web3Store.loadingLeaderboard = false;
+  }
+};
+
+// Get data for the current period
+const currentLeaderboardData = computed(() => web3Store.getCurrentLeaderboardData);
+const currentUserBurnAmount = computed(() => web3Store.getCurrentUserBurnAmount);
+
 // Format addresses for display
 function formatAddress(address) {
   if (!address) return '';
@@ -16,7 +41,16 @@ function formatAddress(address) {
 
 // Format numbers with commas
 function formatNumber(number) {
-  return parseFloat(number).toLocaleString(undefined, {
+  // Handle null, undefined, or NaN values
+  if (number === null || number === undefined || isNaN(number) || number === '') {
+    return '0';
+  }
+  
+  // Convert to number if it's a string
+  const value = typeof number === 'string' ? parseFloat(number) : number;
+  
+  // Format with commas
+  return value.toLocaleString(undefined, {
     minimumFractionDigits: 0,
     maximumFractionDigits: 4
   });
@@ -83,7 +117,14 @@ onMounted(async () => {
     <v-card class="mx-auto" width="100%" elevation="3">
     <v-card-title class="text-center text-h5 py-4">
       <v-icon size="large" color="error" class="me-2">mdi-fire</v-icon>
-      Burn Leaderboard
+      <span>
+        {{ 
+          web3Store.currentLeaderboardPeriod === web3Store.leaderboardPeriods.DAILY ? 'Daily' :
+          web3Store.currentLeaderboardPeriod === web3Store.leaderboardPeriods.WEEKLY ? 'Weekly' :
+          web3Store.currentLeaderboardPeriod === web3Store.leaderboardPeriods.MONTHLY ? 'Monthly' :
+          'All Time'
+        }} Burn Leaderboard
+      </span>
     </v-card-title>
     
     <v-card-text>
@@ -112,7 +153,13 @@ onMounted(async () => {
                 Connect wallet to view
               </v-card-text>
               <v-card-text v-else class="text-h6">
-                {{ formatNumber(web3Store.userBurnAmount) }} {{ web3Store.tokenSymbol || 'Tokens' }}
+                {{ formatNumber(currentUserBurnAmount || '0') }} {{ web3Store.tokenSymbol || 'Tokens' }}
+                <div class="text-caption text-left mt-2" v-if="currentUserBurnAmount === '0'">
+                  <div>All-time: {{ formatNumber(web3Store.userBurnAmount) }}</div>
+                  <div>Daily: {{ formatNumber(web3Store.userDailyBurnAmount) }}</div>
+                  <div>Weekly: {{ formatNumber(web3Store.userWeeklyBurnAmount) }}</div>
+                  <div>Monthly: {{ formatNumber(web3Store.userMonthlyBurnAmount) }}</div>
+                </div>
               </v-card-text>
             </v-card>
           </v-col>
@@ -130,6 +177,25 @@ onMounted(async () => {
           </v-col>
         </v-row>
         
+        <!-- Time Period Tabs -->
+        <v-card variant="outlined" class="mb-4">
+          <v-tabs
+            v-model="web3Store.currentLeaderboardPeriod"
+            bg-color="background"
+            slider-color="primary"
+            @update:model-value="changePeriod"
+            centered
+          >
+            <v-tab
+              v-for="option in periodOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.title }}
+            </v-tab>
+          </v-tabs>
+        </v-card>
+        
         <!-- Leaderboard Table -->
         <v-data-table
           :headers="[
@@ -137,7 +203,7 @@ onMounted(async () => {
             { title: 'Address', align: 'start', key: 'address' },
             { title: 'Amount Burned', align: 'end', key: 'amount' }
           ]"
-          :items="web3Store.leaderboardData.map((item, index) => ({
+          :items="currentLeaderboardData.map((item, index) => ({
             rank: index + 1,
             address: formatAddress(item.address),
             rawAddress: item.address,
@@ -185,6 +251,16 @@ onMounted(async () => {
           <template v-slot:no-data>
             <div class="text-center pa-4">
               <p v-if="isLoading">Loading leaderboard data...</p>
+              <div v-else-if="web3Store.status && web3Store.status.includes('Error')">
+                <v-alert type="error" density="compact" variant="tonal">
+                  {{ web3Store.status }}
+                </v-alert>
+                <div class="mt-3">
+                  <v-btn color="primary" prepend-icon="mdi-refresh" @click="refreshLeaderboard">
+                    Retry
+                  </v-btn>
+                </div>
+              </div>
               <p v-else>No burn data available yet. Be the first to burn tokens!</p>
             </div>
           </template>

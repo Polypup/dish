@@ -1,4 +1,205 @@
 export const BURN_LEADERBOARD_ABI = [
+  // User-specific functions for burn amounts
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_address",
+        "type": "address"
+      }
+    ],
+    "name": "getBurnedByAddress",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_address",
+        "type": "address"
+      }
+    ],
+    "name": "getRankOfAddress",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_address",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_startTime",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_endTime",
+        "type": "uint256"
+      }
+    ],
+    "name": "getBurnedByAddressInPeriod",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_address",
+        "type": "address"
+      }
+    ],
+    "name": "getDailyBurnsByAddress",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_address",
+        "type": "address"
+      }
+    ],
+    "name": "getWeeklyBurnsByAddress",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_address",
+        "type": "address"
+      }
+    ],
+    "name": "getMonthlyBurnsByAddress",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  // Time-based leaderboard functions
+  {
+    "inputs": [],
+    "name": "getDailyLeaderboard",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "burnerAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountBurned",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct BurnLeaderboard.Burner[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getWeeklyLeaderboard",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "burnerAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountBurned",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct BurnLeaderboard.Burner[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getMonthlyLeaderboard",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "burnerAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountBurned",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct BurnLeaderboard.Burner[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
   {
     "inputs": [
       {
@@ -148,27 +349,8 @@ export const BURN_LEADERBOARD_ABI = [
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_address",
-        "type": "address"
-      }
-    ],
-    "name": "getBurnedByAddress",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [],
-    "name": "getLeaderboard",
+    "name": "getTotalLeaderboard",
     "outputs": [
       {
         "components": [
@@ -186,25 +368,6 @@ export const BURN_LEADERBOARD_ABI = [
         "internalType": "struct BurnLeaderboard.Burner[]",
         "name": "",
         "type": "tuple[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_address",
-        "type": "address"
-      }
-    ],
-    "name": "getRankOfAddress",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -341,6 +504,6 @@ export const BURN_LEADERBOARD_ABI = [
 
 // The deployed BurnLeaderboard contract address
 export const BURN_LEADERBOARD_ADDRESS = {
-  '0xa86a': '0x1e53BD57601414f736ceEe8EF24570C202dce893', // Avalanche Mainnet
-  '0xa869': '0x1e53BD57601414f736ceEe8EF24570C202dce893', // Avalanche Testnet - same address for now
+  '0xa86a': '0x2AadD1D7067db743b80ec75896365A301ec6eE1C', // Avalanche Mainnet
+  '0xa869': '0x2AadD1D7067db743b80ec75896365A301ec6eE1C', // Avalanche Testnet - same address for now
 };
