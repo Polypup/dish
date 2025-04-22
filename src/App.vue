@@ -50,10 +50,29 @@ onMounted(async () => {
     <!-- Footer -->
     <v-footer app padless :color="themeStore.isDark ? 'surface' : 'bg-grey-lighten-3'" class="fill-width">
       <v-container fluid class="fill-width">
-        <v-row justify="center" align="center" class="text-center py-2">
-          <v-col cols="12">
+        <v-row justify="center" align="center" class="py-2">
+          <v-col cols="12" md="6" class="text-center text-md-start">
             <div :class="['text-caption', themeStore.isDark ? 'text-grey-lighten-1' : 'text-grey-darken-1']">
               Dish Burner — Track your burns and climb the leaderboard
+            </div>
+          </v-col>
+          
+          <v-col cols="12" md="6" class="text-center text-md-end">
+            <div class="d-flex justify-center justify-md-end gap-3">
+              <!-- Arena Social Link -->
+              <a href="https://arena.social/DimishAvax" target="_blank" rel="noopener noreferrer" class="social-link" title="Arena">
+                <v-img src="/images/arena.png" alt="Arena" width="32" height="32" class="social-icon" />
+              </a>
+              
+              <!-- Twitter Link -->
+              <a href="https://twitter.com/DimishAvax" target="_blank" rel="noopener noreferrer" class="social-link" title="Twitter">
+                <v-img src="/images/twitter.png" alt="Twitter" width="32" height="32" class="social-icon" />
+              </a>
+              
+              <!-- Discord Link -->
+              <a href="https://discord.gg/NGxtnM9cTu" target="_blank" rel="noopener noreferrer" class="social-link" title="Discord">
+                <v-img src="/images/discord.png" alt="Discord" width="32" height="32" class="social-icon" />
+              </a>
             </div>
           </v-col>
         </v-row>
@@ -117,5 +136,28 @@ html, body {
 .theme-toggle-btn {
   position: relative;
   overflow: hidden;
+}
+
+/* Social link styles */
+.social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+  border-radius: 50%;
+  padding: 4px;
+}
+
+.social-link:hover {
+  transform: scale(1.15);
+  background-color: rgba(var(--v-theme-primary), 0.1);
+}
+
+.social-icon {
+  transition: filter 0.3s ease;
+}
+
+.v-theme--dark .social-icon {
+  filter: brightness(0.9);
 }
 </style>
