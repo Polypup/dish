@@ -95,7 +95,7 @@ onMounted(async () => {
     </v-main>
     
     <!-- Footer -->
-    <v-footer app padless :color="themeStore.isDark ? 'surface' : 'bg-grey-lighten-3'" class="fill-width">
+    <v-footer :app="$vuetify.display.mdAndUp" padless :color="themeStore.isDark ? 'surface' : 'bg-grey-lighten-3'" class="fill-width">
       <v-container fluid class="fill-width">
         <v-row justify="center" align="center" class="py-2">
           <v-col cols="12" md="6" class="text-center text-md-start">
@@ -162,7 +162,13 @@ html, body {
 }
 
 .v-container.fill-height {
-  min-height: calc(100vh - 128px); /* Account for header and footer */
+  min-height: calc(100vh - 128px); /* Account for header and footer on desktop */
+}
+
+@media (max-width: 959px) {
+  .v-container.fill-height {
+    min-height: unset; /* Remove fixed height on mobile since footer is not sticky */
+  }
 }
 
 .fill-width {
