@@ -1,6 +1,6 @@
 // Styles
-import 'vuetify/styles'
-import '@mdi/font/css/materialdesignicons.css'
+import '/node_modules/vuetify/lib/styles/main.css'
+import '/node_modules/@mdi/font/css/materialdesignicons.css'
 
 // Vue and plugins
 import { createApp } from 'vue'
