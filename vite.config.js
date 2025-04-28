@@ -4,9 +4,6 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
-// We don't need this custom plugin anymore
-// Using direct imports instead
-
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   plugins: [
@@ -16,8 +13,12 @@ export default defineConfig(({ mode }) => ({
   base: mode === 'production' ? '/dish/' : '/',
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
-    },
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      'vue': fileURLToPath(new URL('./node_modules/vue/dist/vue.esm-browser.js', import.meta.url)),
+      'vuetify': fileURLToPath(new URL('./node_modules/vuetify', import.meta.url)),
+      'pinia': fileURLToPath(new URL('./node_modules/pinia/dist/pinia.mjs', import.meta.url)),
+      '@mdi/font/css/materialdesignicons.css': fileURLToPath(new URL('./node_modules/@mdi/font/css/materialdesignicons.css', import.meta.url))
+    }
   },
   optimizeDeps: {
     esbuildOptions: {
