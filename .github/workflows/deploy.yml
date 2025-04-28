@@ -20,14 +20,16 @@ jobs:
           cache: 'npm'
 
       - name: Install Dependencies
-        run: cd dish-app && npm ci
+        working-directory: ./
+        run: npm ci
 
       - name: Build
-        run: cd dish-app && npm run build
+        working-directory: ./
+        run: npm run build
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: dish-app/dist
+          folder: ./dist
           branch: gh-pages
           clean: true
