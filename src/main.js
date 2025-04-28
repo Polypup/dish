@@ -1,13 +1,13 @@
 // Styles
-import 'vuetify/lib/styles/main.css'
-import '@mdi/font/css/materialdesignicons.css'
+import '/node_modules/vuetify/lib/styles/main.css'
+import '/node_modules/@mdi/font/css/materialdesignicons.css'
 
 // Vue and plugins
-import { createApp } from 'vue'
-import { createVuetify } from 'vuetify/lib/framework.js'
-import { createPinia } from 'pinia'
-import * as components from 'vuetify/lib/components/index.js'
-import * as directives from 'vuetify/lib/directives/index.js'
+import { createApp } from '/node_modules/vue/dist/vue.esm-browser.js'
+import { createVuetify } from '/node_modules/vuetify/lib/framework.js'
+import { createPinia } from '/node_modules/pinia/dist/pinia.mjs'
+import * as components from '/node_modules/vuetify/lib/components/index.js'
+import * as directives from '/node_modules/vuetify/lib/directives/index.js'
 import App from './App.vue'
 
 const vuetify = createVuetify({
