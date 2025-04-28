@@ -10,6 +10,9 @@ const theme = useTheme();
 const nativeBalance = ref('0');
 const loadingBalance = ref(false);
 
+// Get base URL for assets
+const baseUrl = computed(() => import.meta.env.BASE_URL);
+
 // Set the theme based on themeStore
 watch(() => themeStore.isDark, (isDark) => {
   theme.global.name.value = isDark ? 'dark' : 'light';
@@ -160,7 +163,7 @@ onMounted(async () => {
       <v-row align="center" no-gutters class="d-none d-sm-flex">
         <v-col cols="auto" class="d-flex align-center">
           <div class="d-flex align-center">
-            <v-img src="/images/dimish.png" width="36" height="36" class="me-2"></v-img>
+            <v-img :src="baseUrl + 'images/dimish.png'" width="36" height="36" class="me-2"></v-img>
             <span class="text-h6 font-weight-bold">Dimish</span>
           </div>
         </v-col>
@@ -204,7 +207,7 @@ onMounted(async () => {
             >
               <template v-slot:prepend>
                 <v-avatar size="16" class="me-1">
-                  <v-img src="/images/avax-logo.png" alt="AVAX Logo"></v-img>
+                  <v-img :src="baseUrl + 'images/avax-logo.png'" alt="AVAX Logo"></v-img>
                 </v-avatar>
               </template>
               {{ parseFloat(nativeBalance).toFixed(4) }} AVAX
@@ -287,7 +290,7 @@ onMounted(async () => {
         <v-col cols="12" class="d-flex justify-space-between align-center py-1">
           <!-- Logo -->
           <div class="d-flex align-center">
-            <v-img src="/images/dimish.png" width="32" height="32"></v-img>
+            <v-img :src="baseUrl + 'images/dimish.png'" width="32" height="32"></v-img>
           </div>
           
           <!-- Connect Button OR Theme Toggle -->
@@ -333,7 +336,7 @@ onMounted(async () => {
             >
               <template v-slot:prepend>
                 <v-avatar size="16" class="me-1">
-                  <v-img src="/images/avax-logo.png" alt="AVAX Logo"></v-img>
+                  <v-img :src="baseUrl + 'images/avax-logo.png'" alt="AVAX Logo"></v-img>
                 </v-avatar>
               </template>
               {{ parseFloat(nativeBalance).toFixed(3) }}

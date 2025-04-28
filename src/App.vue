@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, computed } from 'vue';
 import TokenBurner from './components/TokenBurner.vue';
 import WalletHeader from './components/WalletHeader.vue';
 import BurnLeaderboard from './components/BurnLeaderboard.vue';
@@ -8,6 +8,9 @@ import { useThemeStore } from './stores/themeStore';
 
 const web3Store = useWeb3Store();
 const themeStore = useThemeStore(); // Initialize theme store
+
+// Get base URL for assets
+const baseUrl = computed(() => import.meta.env.BASE_URL);
 
 // Copy token address to clipboard with proper error handling
 const copyTokenAddress = () => {
@@ -122,17 +125,17 @@ onMounted(async () => {
             <div class="d-flex justify-center justify-md-end gap-3">
               <!-- Arena Social Link -->
               <a href="https://arena.social/DimishAvax" target="_blank" rel="noopener noreferrer" class="social-link" title="Arena">
-                <v-img src="/images/arena.png" alt="Arena" width="32" height="32" class="social-icon" />
+                <v-img :src="baseUrl + 'images/arena.png'" alt="Arena" width="32" height="32" class="social-icon" />
               </a>
               
               <!-- Twitter Link -->
               <a href="https://twitter.com/DimishAvax" target="_blank" rel="noopener noreferrer" class="social-link" title="Twitter">
-                <v-img src="/images/twitter.png" alt="Twitter" width="32" height="32" class="social-icon" />
+                <v-img :src="baseUrl + 'images/twitter.png'" alt="Twitter" width="32" height="32" class="social-icon" />
               </a>
               
               <!-- Discord Link -->
               <a href="https://discord.gg/NGxtnM9cTu" target="_blank" rel="noopener noreferrer" class="social-link" title="Discord">
-                <v-img src="/images/discord.png" alt="Discord" width="32" height="32" class="social-icon" />
+                <v-img :src="baseUrl + 'images/discord.png'" alt="Discord" width="32" height="32" class="social-icon" />
               </a>
             </div>
           </v-col>
