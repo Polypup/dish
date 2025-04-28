@@ -3,12 +3,14 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
+import copyStyles from './vite-plugin-copy-styles.js'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   plugins: [
     vue(),
     vueDevTools(),
+    copyStyles(),
   ],
   base: mode === 'production' ? '/dish/' : '/',
   resolve: {
@@ -18,6 +20,7 @@ export default defineConfig(({ mode }) => ({
   },
   optimizeDeps: {
     esbuildOptions: {
+      // Enable top-level await and other modern features
       target: 'es2020'
     }
   },
